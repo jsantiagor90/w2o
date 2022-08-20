@@ -49,6 +49,7 @@
         </q-btn-group>
       </q-td>
     </template>
+
   </q-table>
 </template>
 

@@ -54,16 +54,17 @@
     v-model="employeesFormComponent"
   >
     <q-card style="width: 800px; max-width: 90vw;">
-      <div class="q-mt-md q-ml-md text-h6">
+      <div class="q-mt-md q-ml-md text-h6 q-pa-sm">
         {{ !!employeeFormEdit ? 'Editar' : 'Adicionar' }} colaborador
       </div>
+      <div class="">
       <q-form
         ref="employeeForm"
         @submit="submitEmployee()"
       >
         <div>
           <div class="row">
-            <div class="col-xs-12 col-sm-12 col-md-6 q-mr-md">
+            <div class="col-xs-12 col-sm-12 col-md-6 q-mr-md q-pa-sm">
               <q-input
                 label="Nome"
                 v-model="employeeShow.name"
@@ -73,7 +74,7 @@
                 :rules="[val => !!val || 'Preenchimento obrigatório']"
               />
             </div>
-            <div class="col">
+            <div class="col q-pa-sm">
               <q-input
                 label="E-mail"
                 v-model="employeeShow.email"
@@ -86,7 +87,7 @@
         </div>
         <div>
           <div class="row">
-            <div class="col-xs-12 col-sm-12 col-md-6 col-py-xs q-mr-md q-mb-md">
+            <div class="col-xs-12 col-sm-12 col-md-6 q-mr-md q-pa-sm">
               <q-input
                 label="Telefone"
                 :mask="(employeeShow.phone || '').length < 15
@@ -97,7 +98,7 @@
                 :rules="[val => !!val || 'Preenchimento obrigatório']"
               />
             </div>
-            <div class="col">
+            <div class="col q-pa-sm">
               <q-input
                 label="Data de nascimento"
                 v-model="employeeShow.birth_date"
@@ -139,7 +140,9 @@
             </div>
           </div>
         </div>
-        <div align="right">
+        <div
+          class="col q-pa-md q-mt-md"
+          align="right">
           <q-btn
             outline
             label="Salvar colaborador"
@@ -160,7 +163,7 @@
           </div>
         </div>
       </q-form>
-
+      </div>
     </q-card>
 
   </q-dialog>

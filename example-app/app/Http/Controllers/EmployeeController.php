@@ -104,7 +104,7 @@ class EmployeeController extends Controller
         $birthdayCollaboratorsQuery = Employees::query()
             ->where('enterprise_id', $enterprise_id)
             ->whereMonth('birth_date', $month)
-            ->get();
+            ->get(['name', 'phone', 'birth_date']);
 
         return response()->json($birthdayCollaboratorsQuery);
     }
