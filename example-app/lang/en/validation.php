@@ -154,8 +154,7 @@ return [
             'required' => 'A Razão Social é obrigatória',
         ],
         'document' => [
-            'required' => 'O cnpj é obrigatório',
-            'unique' => 'O CNPJ já existe'
+            'required' => 'O cnpj é obrigatório'
         ],
         'phone' => [
             'required' => 'O telefone é obrigatório',

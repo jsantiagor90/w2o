@@ -11,6 +11,15 @@
     binary-state-sort
     @request="getEmployeesFunction"
   >
+    <template v-slot:top-right>
+      <q-btn
+        icon="add"
+        label="Adicionar colaborador"
+        color="primary"
+        outline
+        @click="employeeFormFunction(false)"
+      />
+    </template>
     <template v-slot:body-cell-actions="props">
       <q-td key="actions" :props="props">
         <q-btn-group outline>
@@ -19,7 +28,7 @@
             color="primary"
             icon="edit"
             :disable="removing === props.row.id"
-            :to="{ name: 'enterprise_update', params: { 'id': props.row.id } }"
+            @click="employeeFormFunction(props.row.id)"
           >
             <q-tooltip>
               Editar
@@ -41,17 +50,137 @@
       </q-td>
     </template>
   </q-table>
+  <q-dialog
+    v-model="employeesFormComponent"
+  >
+    <q-card style="width: 800px; max-width: 90vw;">
+      <div class="q-mt-md q-ml-md text-h6">
+        {{ !!employeeFormEdit ? 'Editar' : 'Adicionar' }} colaborador
+      </div>
+      <q-form
+        ref="employeeForm"
+        @submit="submitEmployee()"
+      >
+        <div>
+          <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-6 q-mr-md">
+              <q-input
+                label="Nome"
+                v-model="employeeShow.name"
+                dense
+                outlined
+                color="primary"
+                :rules="[val => !!val || 'Preenchimento obrigatório']"
+              />
+            </div>
+            <div class="col">
+              <q-input
+                label="E-mail"
+                v-model="employeeShow.email"
+                dense
+                outlined
+                color="primary"
+              />
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-6 col-py-xs q-mr-md q-mb-md">
+              <q-input
+                label="Telefone"
+                :mask="(employeeShow.phone || '').length < 15
+              ? '(##) ####-#####' : '(##) #####-####'"
+                v-model="employeeShow.phone"
+                dense
+                outlined
+                :rules="[val => !!val || 'Preenchimento obrigatório']"
+              />
+            </div>
+            <div class="col">
+              <q-input
+                label="Data de nascimento"
+                v-model="employeeShow.birth_date"
+                mask="##/##/####"
+                dense
+                outlined
+                lazy-rules
+                clearable
+                color="primary"
+                :rules="[val => !val || parseDate(val) || 'Informe uma data válida']"
+              >
+                <template v-slot:append>
+                  <q-icon name="event">
+                    <q-popup-proxy
+                      ref="returnForecast"
+                      cover
+                      transition-show="scale"
+                      transition-hide="scale"
+                    >
+                      <q-date
+                        label="Data de nascimento"
+                        v-model="employeeShow.birth_date"
+                        mask="DD/MM/YYYY"
+                        @update:model-value="$refs.returnForecast.hide()"
+                      >
+                        <div class="row items-center justify-end">
+                          <q-btn
+                            label="OK"
+                            color="primary"
+                            flat
+                            v-close-popup
+                          />
+                        </div>
+                      </q-date>
+                    </q-popup-proxy>
+                  </q-icon>
+                </template>
+              </q-input>
+            </div>
+          </div>
+        </div>
+        <div align="right">
+          <q-btn
+            outline
+            label="Salvar colaborador"
+            icon="save"
+            type="submit"
+            color="primary"
+            :disable="saving"
+            :loading="saving"
+          />
+        </div>
+
+        <div v-if="enterprise.id">
+          <q-separator class="q-mt-lg"/>
+          <div class="q-mt-lg">
+            <employees-list-component
+              :enterprise="enterprise.id"
+            />
+          </div>
+        </div>
+      </q-form>
+
+    </q-card>
+
+  </q-dialog>
+
 </template>
 
 <script setup>
 import { onMounted, ref } from 'vue'
-import { insertDocumentMask } from 'src/services/documents'
-import { Notify, Dialog } from 'quasar'
+import { parseDate, formatDateBR } from 'src/services/documents'
+import { Notify, Dialog, Loading } from 'quasar'
 import axios from "axios";
 
 let employeeData = ref([])
+let employeeShow = ref([])
 let loading = ref(false)
 let removing = ref(null)
+const employeesFormComponent = ref(false)
+let employeeFormEdit = ref(null)
+let saving = ref(false)
+const employeeForm = ref(null)
 
 const props = defineProps({
   enterprise: {
@@ -60,6 +189,10 @@ const props = defineProps({
     default: ref({})
   }
 })
+
+function onSubmit() {
+  getEmployeesFunction()
+}
 
 const columns = [
   {
@@ -88,7 +221,7 @@ const columns = [
     label: 'Data de nascimento',
     align: 'left',
     field: 'birth_date',
-    format: val => val || 'N/I',
+    format: val => formatDateBR(val) || 'N/I',
   },
   {
     name: 'actions',
@@ -103,11 +236,21 @@ onMounted(async () => {
   await getEmployeesFunction()
 })
 
+async function employeeFormFunction(employeeId) {
+  employeesFormComponent.value = true
+  employeeFormEdit.value = employeeId
+  if (employeeId){
+    await getEmployeeFunction(employeeId)
+  } else {
+    employeeShow.value = []
+  }
+}
+
 async function getEmployeesFunction() {
   loading.value = true
   try {
     await axios
-      .get(`http://localhost:8001/api/employee`, {enterprise_id: props.enterprise})
+      .get(`http://localhost:8001/api/employee?enterprise_id=${props.enterprise}`)
       .then(( { data } ) => {
         employeeData.value = data
       })
@@ -146,4 +289,66 @@ async function destroyEmployeesFunction(employee) {
       removing.value = null
     })
 }
+
+async function getEmployeeFunction(employeeId) {
+  Loading.show()
+  await axios
+    .get(`http://localhost:8001/api/employee/${employeeId}`)
+    .then(( { data } ) => {
+      console.log(data)
+      employeeShow.value = data
+    }) .catch(error =>{
+      Notify.create({
+        message: 'Falha ao carregar colaborador',
+        type: 'negative'
+      })
+    })
+  Loading.hide()
+}
+
+async function submitEmployee() {
+  saving.value = true
+  const validated = employeeForm.value.validate()
+  if (validated) {
+    const employeeToSave = { ...employeeShow.value }
+    employeeToSave.enterprise_id = props.enterprise
+    if(!employeeShow.value.id){
+      await axios
+        .post('http://localhost:8001/api/employee', employeeToSave)
+        .then(( { data } ) => {
+          const employeeToPush = data
+          Notify.create({
+            message: 'Empresa criada com sucesso',
+            type: 'positive'
+          })
+          employeesFormComponent.value = false
+          getEmployeesFunction()
+        }).catch (error => {
+          Notify.create({
+            message: 'Falha ao criar empresa',
+            type: 'negative'
+          })
+        })
+    }
+    else {
+      await axios
+        .put(`http://localhost:8001/api/employee/${employeeShow.value.id}`, employeeToSave)
+        .then(( { data } ) => {
+          Notify.create({
+            message: 'Empresa editada com sucesso',
+            type: 'positive'
+          })
+          employeesFormComponent.value = false
+          getEmployeesFunction()
+        }).catch(error =>{
+          Notify.create({
+            message: 'Falha ao editar empresa',
+            type: 'negative'
+          })
+        })
+    }
+  }
+  saving.value = false
+}
+
 </script>

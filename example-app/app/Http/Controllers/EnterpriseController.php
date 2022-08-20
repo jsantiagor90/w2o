@@ -28,9 +28,9 @@ class EnterpriseController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name' => 'required',
-            'document' => 'required|unique:enterprises',
+            'document' => 'required',
             'phone' => 'required',
-            'email' => '',
+            'email' => 'nullable|email',
             'zipcode'=> '',
             'state'=> '',
             'city'=> '',
@@ -68,11 +68,9 @@ class EnterpriseController extends Controller
      */
     public function show(Enterprises $enterprise)
     {
-
-//        $enterprise = Enterprises::find($enterpriseId);
-
         return response()->json($enterprise);
     }
+
     /**
      * @param Request $request
      * @param Enterprises $enterprise
@@ -80,6 +78,24 @@ class EnterpriseController extends Controller
      */
     public function update(Request $request,Enterprises $enterprise)
     {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required',
+            'document' => 'required',
+            'phone' => 'required',
+            'email' => 'nullable|email',
+            'zipcode'=> '',
+            'state'=> '',
+            'city'=> '',
+            'neighborhood'=> '',
+            'street'=> '',
+            'number'=> '',
+            'complement'=> '',
+        ]);
+
+        if($validator->fails()) {
+            return response()->json(['error' => true, 'details' => $validator->messages()], 500);
+        }
+
         $data = [
             'name' => $request->input('name') ?: null,
             'document' => $request->input('document') ?: null,

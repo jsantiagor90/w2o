@@ -166,7 +166,7 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { validateCPForCNPJ, onlyNumbers, locationFromZipCode, formatResponseError } from 'src/services/documents'
+import { validateCPForCNPJ, onlyNumbers, locationFromZipCode } from 'src/services/documents'
 import { Notify, Loading } from 'quasar'
 import axios from "axios";
 import { useQuasar } from 'quasar'
@@ -216,7 +216,7 @@ async function submitEnterprise() {
           .put(`http://localhost:8001/api/enterprise/${route.params.id}`, enterpriseToSave)
           .then(( { data } ) => {
             const enterpriseToPush = data
-            router.push({ name: 'enterprise'})
+            router.push({ name: 'enterprise_update', params: { 'id': enterpriseToPush.id } })
             Notify.create({
               message: 'Empresa editada com sucesso',
               type: 'positive'

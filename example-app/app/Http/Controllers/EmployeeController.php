@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Employees;
 use App\Models\Enterprises;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class EmployeeController extends Controller
 {
@@ -13,10 +14,8 @@ class EmployeeController extends Controller
      */
     public function index(Request $request)
     {
-//        $employeQuery = Employees::all();
-        $employeQuery = Employees::query()->where('enterprise_id', $request->enterprise_id)->get();
-//        dd($employeQuery);
-        return response()->json($employeQuery);
+        $employeeQuery = Employees::query()->where('enterprise_id', $request->enterprise_id)->get();
+        return response()->json($employeeQuery);
     }
 
     /**
@@ -25,17 +24,38 @@ class EmployeeController extends Controller
      */
     public function store(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'enterprise_id' => 'required',
+            'name' => 'required',
+            'phone' => 'required',
+            'email' => 'required|email',
+            'birth_date'=> '',
+        ]);
+
+        if($validator->fails()) {
+            return response()->json(['error' => true, 'details' => $validator->messages()], 500);
+        }
+
         $data = [
             'enterprise_id' => $request->input('enterprise_id') ?: null,
             'name' => $request->input('name') ?: null,
             'phone' => $request->input('phone') ?: null,
             'email' => $request->input('email') ?: null,
-            'birth_date' => $request->input('birth_date') ?: null
+            'birth_date' => $request->input('birth_date') ? self::formatDateToSave($request->input('birth_date')) : null
         ];
 
-        $enterprise = Employees::create($data);
+        $employee = Employees::create($data);
 
-        return response()->json($enterprise);
+        return response()->json($employee);
+    }
+
+    /**
+     * @param Employees $employee
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function show(Employees $employee)
+    {
+        return response()->json($employee);
     }
 
     /**
@@ -45,12 +65,24 @@ class EmployeeController extends Controller
      */
     public function update(Request $request, Employees $employee)
     {
+        $validator = Validator::make($request->all(), [
+            'enterprise_id' => 'required',
+            'name' => 'required',
+            'phone' => 'required',
+            'email' => 'required|email',
+            'birth_date'=> '',
+        ]);
+
+        if($validator->fails()) {
+            return response()->json(['error' => true, 'details' => $validator->messages()], 500);
+        }
+
         $data = [
             'enterprise_id' => $request->input('enterprise_id') ?: null,
             'name' => $request->input('name') ?: null,
             'phone' => $request->input('phone') ?: null,
             'email' => $request->input('email') ?: null,
-            'birth_date' => $request->input('birth_date') ?: null
+            'birth_date' => $request->input('birth_date') ? self::formatDateToSave($request->input('birth_date')) : null
         ];
         $employee->update($data);
 
@@ -66,5 +98,15 @@ class EmployeeController extends Controller
         $employee->delete();
 
         return response()->json();
+    }
+
+    public static function formatDateToSave($date)
+    {
+        if (str_contains($date, '/')) {
+            $explodedDate = explode('/', $date);
+            return "$explodedDate[2]-$explodedDate[1]-$explodedDate[0]";
+        }
+
+        return $date;
     }
 }
