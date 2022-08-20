@@ -100,6 +100,15 @@ class EmployeeController extends Controller
         return response()->json();
     }
 
+    public function birthdayCollaborators($enterprise_id, $month) {
+        $birthdayCollaboratorsQuery = Employees::query()
+            ->where('enterprise_id', $enterprise_id)
+            ->whereMonth('birth_date', $month)
+            ->get();
+
+        return response()->json($birthdayCollaboratorsQuery);
+    }
+
     public static function formatDateToSave($date)
     {
         if (str_contains($date, '/')) {

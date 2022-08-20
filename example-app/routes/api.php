@@ -19,3 +19,5 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 Route::apiResource('enterprise', \App\Http\Controllers\EnterpriseController::class);
 Route::apiResource('employee', \App\Http\Controllers\EmployeeController::class);
+
+Route::get('birthday-collaborators/{enterprise_id}/{month}', [\App\Http\Controllers\EmployeeController::class, 'birthdayCollaborators']);
